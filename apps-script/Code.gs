@@ -148,7 +148,7 @@ function updateTask(body) {
   }
   
   // Registra no Log
-  logAction(taskId, \`updateTask (done: \${done})\`, updatedBy);
+  logAction(taskId, "updateTask (done: " + done + ")", updatedBy);
   
   return { success: true, message: "Tarefa atualizada com sucesso." };
 }
@@ -165,7 +165,7 @@ function updateTasks(body) {
     updateTask(task);
   }
   
-  return { success: true, message: \`\${tasks.length} tarefas processadas em lote.\` };
+  return { success: true, message: tasks.length + " tarefas processadas em lote." };
 }
 
 // 5. GET ?action=getLog
