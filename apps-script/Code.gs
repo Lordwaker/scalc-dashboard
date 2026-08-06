@@ -3,23 +3,21 @@
  * SERVCALC DEV DASHBOARD — Google Apps Script Backend
  * =========================================================================
  * 
- * INSTRUÇÕES:
- * 1. Abra o script vinculado à sua planilha (sheets.google.com).
- * 2. Substitua todo o conteúdo de Code.gs por este arquivo e salve (Ctrl+S).
- * 3. Clique em "Implantar" (Deploy) -> "Gerenciar implantações" (Manage deployments).
- * 4. Clique no ícone de lápis (Editar) -> Versão: "Nova versão" -> Clique em "Implantar".
- * 
- * ENDPOINTS:
- * - GET  ?action=getDoc&docId=XXX  -> Retorna HTML do documento Google Docs
- * - GET  ?action=getTasks          -> Retorna estados das tarefas (TaskState)
- * - GET  ?action=getCustomTasks    -> Retorna tarefas criadas dinamicamente
- * - GET  ?action=getLog            -> Retorna últimos 50 logs
- * - GET  ?action=setup             -> Cria abas necessárias automaticamente
- * - POST action=updateTask         -> Atualiza estado de 1 tarefa
- * - POST action=updateTasks        -> Atualiza estados em lote
- * - POST action=addTask            -> Adiciona uma nova tarefa dinâmica
- * - POST action=sendEmail          -> Envia email de prioridades via Google Mail
+ * INSTRUÇÕES PARA ATUALIZAR E AUTORIZAR O ENVIO DE E-MAILS:
+ * 1. Cole este código no arquivo Code.gs do seu projeto Google Apps Script.
+ * 2. Salve com Ctrl + S.
+ * 3. No menu suspenso superior (ao lado de 'Depurar'), selecione a função:
+ *    "autorizarPermissoesDeEmail" e clique em "Executar" (Run).
+ *    -> O Google vai pedir permissão. Clique em "Revisar permissões" -> sua conta -> "Avançado" -> "Permitir".
+ * 4. Agora clique em "Implantar" (Deploy) -> "Gerenciar implantações" -> Editar (lápis) -> Nova versão -> Implantar.
+ * Pronto! O envio de e-mails estará 100% autorizado e liberado.
  */
+
+// Função auxiliar para conceder permissão de envio de e-mail ao script
+function autorizarPermissoesDeEmail() {
+  const quota = MailApp.getRemainingDailyQuota();
+  Logger.log("Permissão concedida! Cota diária restante de e-mails: " + quota);
+}
 
 const ALLOWED_ORIGIN = "https://lordwaker.github.io";
 

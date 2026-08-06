@@ -36,11 +36,10 @@ const GoogleSync = (() => {
       if (data.success) {
         setSyncStatus('online');
         lastSyncTime = new Date();
-        return data.data;
+        return data.data !== undefined ? data.data : data;
       } else {
-        console.error('[GoogleSync] API error:', data.error);
-        setSyncStatus('offline');
-        return null;
+        console.error('[GoogleSync] API error:', data.error || data.message);
+        return { error: data.error || data.message };
       }
     } catch (err) {
       console.error('[GoogleSync] Network error:', err);

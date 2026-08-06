@@ -36,11 +36,18 @@ const Notifications = (() => {
           html: emailHTML,
           text: summaryText
         });
-        if (result !== null) {
+
+        if (result && !result.error) {
           emailSentToday = true;
           localStorage.setItem('scalc_email_last_sent', Priorities.getTodayStr());
           App.showToast(`📧 Email enviado com sucesso para ${CONFIG.NOTIFY_EMAIL}`, 'success');
           return true;
+        } else if (result && result.error) {
+          console.warn('[Notifications] Apps Script email error:', result.error);
+          if (String(result.error).includes('permiss') || String(result.error).includes('MailApp')) {
+            App.showToast('⚠️ Permissão pendente no Apps Script: execute autorizarPermissoesDeEmail no editor.', 'warning');
+            return false;
+          }
         }
       } catch (err) {
         console.warn('[Notifications] Apps Script email failed, trying backend...', err);
