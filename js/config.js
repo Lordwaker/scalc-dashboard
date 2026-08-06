@@ -4,7 +4,7 @@ const CONFIG = {
   GOOGLE_DOC_ID: '1XT3b3NXLWz7sAzhCk-7rllPxXa1c5BU5ejMtxyWPt-4',
 
   // Google Apps Script Web App URL (paste after deploying the Apps Script)
-  APPS_SCRIPT_URL: '',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxGc6sEqemCtxCOwQTyzGf9u5PRDTLw1vDe6cQsGsCUF0uWO4IyUa9Gdql8uMznFLXv/exec',
 
   // ServCalc Backend API (para envio de email via OCI SMTP)
   SERVCALC_API_URL: 'https://servcalc.com.br/api',
