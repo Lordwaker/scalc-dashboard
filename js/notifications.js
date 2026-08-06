@@ -18,46 +18,65 @@ const Notifications = (() => {
     return true;
   }
 
-  // ── Send priority email via OCI SMTP (through ServCalc backend) ──
+  // ── Send priority email ──
   async function sendPriorityEmail(priorities) {
-    if (!CONFIG.SERVCALC_API_URL || !CONFIG.DASHBOARD_API_KEY) {
-      App.showToast('API do ServCalc não configurada.', 'warning');
-      return false;
-    }
+    App.showToast('📧 Enviando email de prioridades...', 'info');
 
-    try {
-      const emailHTML = Priorities.generateEmailHTML(priorities);
-      const summaryText = Priorities.generateSummaryText(priorities);
-      const todayStr = Priorities.formatDateBR(Priorities.getTodayStr());
+    const emailHTML = Priorities.generateEmailHTML(priorities);
+    const summaryText = Priorities.generateSummaryText(priorities);
+    const todayStr = Priorities.formatDateBR(Priorities.getTodayStr());
+    const subject = `📅 Prioridades do Dia — ServCalc (${todayStr})`;
 
-      const response = await fetch(`${CONFIG.SERVCALC_API_URL}/dashboard/send-priority-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-dashboard-key': CONFIG.DASHBOARD_API_KEY
-        },
-        body: JSON.stringify({
+    // 1. Tenta via Google Apps Script (direto e sem depender de backend externo)
+    if (CONFIG.APPS_SCRIPT_URL) {
+      try {
+        const result = await GoogleSync.apiFetch('sendEmail', 'POST', {
           to: CONFIG.NOTIFY_EMAIL,
-          subject: `📅 Prioridades do Dia — ServCalc (${todayStr})`,
+          subject: subject,
           html: emailHTML,
           text: summaryText
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        emailSentToday = true;
-        localStorage.setItem('scalc_email_last_sent', Priorities.getTodayStr());
-        App.showToast(`📧 Email enviado para ${CONFIG.NOTIFY_EMAIL} via OCI`, 'success');
-        return true;
-      } else {
-        App.showToast('Erro ao enviar email: ' + (data.error || 'Desconhecido'), 'error');
+        });
+        if (result !== null) {
+          emailSentToday = true;
+          localStorage.setItem('scalc_email_last_sent', Priorities.getTodayStr());
+          App.showToast(`📧 Email enviado com sucesso para ${CONFIG.NOTIFY_EMAIL}`, 'success');
+          return true;
+        }
+      } catch (err) {
+        console.warn('[Notifications] Apps Script email failed, trying backend...', err);
       }
-    } catch (e) {
-      console.error('[Notifications] Email send failed:', e);
-      App.showToast('Erro ao conectar com a API: ' + e.message, 'error');
     }
+
+    // 2. Fallback: Backend ServCalc (OCI SMTP)
+    if (CONFIG.SERVCALC_API_URL && CONFIG.DASHBOARD_API_KEY) {
+      try {
+        const response = await fetch(`${CONFIG.SERVCALC_API_URL}/dashboard/send-priority-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-dashboard-key': CONFIG.DASHBOARD_API_KEY
+          },
+          body: JSON.stringify({
+            to: CONFIG.NOTIFY_EMAIL,
+            subject: subject,
+            html: emailHTML,
+            text: summaryText
+          })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          emailSentToday = true;
+          localStorage.setItem('scalc_email_last_sent', Priorities.getTodayStr());
+          App.showToast(`📧 Email enviado via OCI para ${CONFIG.NOTIFY_EMAIL}`, 'success');
+          return true;
+        }
+      } catch (e) {
+        console.error('[Notifications] Backend email failed:', e);
+      }
+    }
+
+    App.showToast('Erro ao enviar email. Verifique a conexão com a API.', 'error');
     return false;
   }
 

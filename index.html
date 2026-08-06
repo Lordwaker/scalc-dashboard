@@ -45,8 +45,9 @@
   <div class="sync-dot" id="sync-dot"></div>
   <span id="sync-text">Conectando...</span>
   <div class="sync-actions">
+    <button class="sync-btn sync-btn-primary" onclick="App.showNewTaskModal()" title="Adicionar nova tarefa">+ Nova Tarefa</button>
     <button class="sync-btn" onclick="App.manualSync()" title="Forçar sincronização">🔄 Sync</button>
-    <button class="sync-btn" onclick="App.sendEmailNow()" title="Enviar email com prioridades">📧 Email</button>
+    <button class="sync-btn" onclick="App.sendEmailNow()" title="Enviar email com prioridades">📧 Enviar Email</button>
     <button class="sync-btn" onclick="App.showConfig()" title="Configurações">⚙️</button>
   </div>
 </div>
@@ -108,6 +109,55 @@
 
 <!-- SCROLL TOP -->
 <button class="scroll-top" id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- NEW TASK MODAL -->
+<div class="modal-backdrop" id="new-task-modal">
+  <div class="modal">
+    <h2>➕ Nova Tarefa</h2>
+    
+    <label>Descrição da Tarefa</label>
+    <textarea id="task-new-text" placeholder="Ex: Ajustar cálculo de aposentadoria especial para magistério"></textarea>
+
+    <div class="modal-grid-2">
+      <div>
+        <label>Sprint</label>
+        <select id="task-new-sprint">
+          <option value="0">Sprint 0 — Homologação</option>
+          <option value="1" selected>Sprint 1 — Bugs & Feedback</option>
+          <option value="2">Sprint 2 — Refatoração</option>
+          <option value="3">Sprint 3 — Features Avançadas</option>
+        </select>
+      </div>
+      <div>
+        <label>Data de Execução</label>
+        <input type="date" id="task-new-date">
+      </div>
+    </div>
+
+    <div class="modal-grid-2">
+      <div>
+        <label>Categoria</label>
+        <select id="task-new-tag">
+          <option value="feedback" selected>🧑‍⚖️ Feedback / Jurídico</option>
+          <option value="bug">🐛 Bug</option>
+          <option value="seguranca">🔐 Segurança</option>
+          <option value="tecnico">⚙️ Técnico</option>
+          <option value="banco">📊 Banco de Dados</option>
+          <option value="homolog">🏗️ Homologação</option>
+        </select>
+      </div>
+      <div>
+        <label>Estimativa de Horas</label>
+        <input type="text" id="task-new-hours" placeholder="Ex: 2h ou 30min" value="1h">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="App.closeNewTaskModal()">Cancelar</button>
+      <button class="btn-primary" onclick="App.saveNewTask()">➕ Salvar Tarefa</button>
+    </div>
+  </div>
+</div>
 
 <!-- CONFIG MODAL -->
 <div class="modal-backdrop" id="config-modal">

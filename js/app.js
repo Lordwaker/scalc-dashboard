@@ -5,6 +5,13 @@ const App = (() => {
   let activeFilter = 'all';
   let userName = '';
 
+  // ── Helper: Combine static tasks + dynamic custom tasks ──
+  function getAllTasks() {
+    const custom = (typeof GoogleSync !== 'undefined' && GoogleSync.getCustomTasks) ? GoogleSync.getCustomTasks() : [];
+    const staticTasks = typeof TASKS_DATA !== 'undefined' ? TASKS_DATA : [];
+    return [...staticTasks, ...custom];
+  }
+
   // ── Initialize ──
   async function init() {
     console.log('[App] Initializing ServCalc Dashboard...');
@@ -15,6 +22,9 @@ const App = (() => {
       userName = prompt('Qual é o seu nome? (para identificar quem atualizou as tasks)') || 'Anônimo';
       localStorage.setItem('scalc_username', userName);
     }
+
+    // Load custom tasks from Google Sheet / localStorage
+    await GoogleSync.loadCustomTasks();
 
     // Render the dashboard structure
     renderSprints();
@@ -94,14 +104,15 @@ const App = (() => {
   }
 
   function renderSprintDays(sprintId) {
-    const sprintTasks = TASKS_DATA.filter(t => t.sprint === sprintId);
+    const sprintTasks = getAllTasks().filter(t => t.sprint === sprintId);
     const today = Priorities.getTodayStr();
 
     // Group tasks by date
     const tasksByDate = {};
     sprintTasks.forEach(task => {
-      if (!tasksByDate[task.date]) tasksByDate[task.date] = [];
-      tasksByDate[task.date].push(task);
+      const d = task.date || today;
+      if (!tasksByDate[d]) tasksByDate[d] = [];
+      tasksByDate[d].push(task);
     });
 
     // Get day metadata
@@ -119,13 +130,12 @@ const App = (() => {
     // Render days
     const dates = Object.keys(tasksByDate).sort();
     dates.forEach(date => {
-      const dayInfo = DAYS_DATA[date] || {};
+      const dayInfo = (typeof DAYS_DATA !== 'undefined' && DAYS_DATA[date]) || {};
       const isToday = date === today;
-      const isPast = date < today;
 
       html += `<div class="day">`;
       html += `<div class="day-header">`;
-      html += `<div class="day-date${isToday ? ' today' : ''}">${dayInfo.emoji || '📋'} ${dayInfo.label || date}</div>`;
+      html += `<div class="day-date${isToday ? ' today' : ''}">${dayInfo.emoji || '📋'} ${dayInfo.label || Priorities.formatDateBR(date)}</div>`;
       if (isToday) html += `<span class="today-badge">HOJE</span>`;
       if (dayInfo.isWeekend && dayInfo.weekendHours) {
         html += `<span class="weekend-badge">FDS — ${dayInfo.weekendHours}</span>`;
@@ -144,7 +154,7 @@ const App = (() => {
     });
 
     // Sprint 3 placeholder
-    if (sprintId === 3) {
+    if (sprintId === 3 && sprintTasks.length <= 1) {
       html += `
         <div class="day">
           <div class="day-header">
@@ -172,11 +182,13 @@ const App = (() => {
       return `<span class="tag tag-${tag}">${labels[tag] || tag}</span>`;
     }).join('');
 
+    const customBadge = task.isCustom ? '<span class="tag" style="background:rgba(168,85,247,0.2);color:#c084fc;border:1px solid rgba(168,85,247,0.3);">✨ Nova</span>' : '';
+
     return `
       <div class="task" data-task-id="${task.id}" data-tags="${tagsStr}">
         <input type="checkbox" class="task-cb" id="cb-${task.id}" onchange="App.taskChange('${task.id}', this.checked)">
         <div class="task-content">
-          <div class="task-text">${task.text}</div>
+          <div class="task-text">${task.text} ${customBadge}</div>
           <div class="task-meta">${tagsHTML}</div>
         </div>
         <div class="task-hours">${task.hours}</div>
@@ -191,7 +203,8 @@ const App = (() => {
       const cb = document.getElementById(`cb-${taskId}`);
       if (cb) {
         cb.checked = state.done;
-        cb.closest('.task').classList.toggle('done', state.done);
+        const taskEl = cb.closest('.task');
+        if (taskEl) taskEl.classList.toggle('done', state.done);
       }
     });
     updateAllProgress();
@@ -215,17 +228,19 @@ const App = (() => {
     updateTabTitle();
 
     // Show toast
-    const task = TASKS_DATA.find(t => t.id === taskId);
+    const allTasks = getAllTasks();
+    const task = allTasks.find(t => t.id === taskId);
     if (task) {
       const plainText = task.text.replace(/<[^>]*>/g, '').substring(0, 50);
-      showToast(
-        checked ? `✅ "${plainText}..." concluída` : `⏪ "${plainText}..." reaberta`,
-        checked ? 'success' : 'info'
-      );
+      if (checked) {
+        showToast(`✅ "${plainText}" concluída!`, 'success');
+      } else {
+        showToast(`↩️ "${plainText}" desmarcada`, 'info');
+      }
     }
   }
 
-  // ── Progress bars ──
+  // ── Progress calculations ──
   function updateAllProgress() {
     const allCbs = [...document.querySelectorAll('.task-cb')];
     const doneCbs = allCbs.filter(c => c.checked);
@@ -235,11 +250,17 @@ const App = (() => {
     const pct = total ? Math.round(done / total * 100) : 0;
 
     // Global
-    document.getElementById('global-pct').textContent = pct + '%';
-    document.getElementById('global-bar').style.width = pct + '%';
-    document.getElementById('done-count').textContent = done;
-    document.getElementById('pending-count').textContent = pending;
-    document.getElementById('total-count').textContent = total;
+    const gPct = document.getElementById('global-pct');
+    const gBar = document.getElementById('global-bar');
+    const dCount = document.getElementById('done-count');
+    const pCount = document.getElementById('pending-count');
+    const tCount = document.getElementById('total-count');
+
+    if (gPct) gPct.textContent = pct + '%';
+    if (gBar) gBar.style.width = pct + '%';
+    if (dCount) dCount.textContent = done;
+    if (pCount) pCount.textContent = pending;
+    if (tCount) tCount.textContent = total;
 
     // Per sprint
     SPRINTS_DATA.forEach(sprint => {
@@ -258,7 +279,8 @@ const App = (() => {
   // ── Priority panel ──
   function updatePriorities() {
     const states = GoogleSync.getTaskStates();
-    const priorities = Priorities.analyzePriorities(TASKS_DATA, states);
+    const allTasks = getAllTasks();
+    const priorities = Priorities.analyzePriorities(allTasks, states);
 
     const body = document.getElementById('priority-body');
     const dateBadge = document.getElementById('priority-date');
@@ -299,15 +321,16 @@ const App = (() => {
       `;
     });
 
-    // Today
+    // Today tasks
     priorities.today.forEach(task => {
       const plainText = task.text.replace(/<[^>]*>/g, '');
       html += `
-        <div class="priority-card" onclick="App.scrollToTask('${task.id}')">
+        <div class="priority-card today" onclick="App.scrollToTask('${task.id}')">
           <div class="p-icon">${task.priorityInfo.emoji}</div>
           <div class="p-content">
             <div class="p-text">${plainText}</div>
             <div class="p-meta">
+              <span class="tag tag-today">🟡 Hoje</span>
               <span class="p-sprint">Sprint ${task.sprint} · ${task.hours}</span>
             </div>
           </div>
@@ -318,10 +341,13 @@ const App = (() => {
     html += '</div>';
 
     // Summary line
-    const totalHours = priorities.totalHoursToday + priorities.totalHoursOverdue;
-    html += `<div style="margin-top:12px;font-size:11px;color:var(--text3);text-align:right;">
-      ${priorities.overdue.length} atrasadas · ${priorities.today.length} de hoje · ~${totalHours.toFixed(1)}h estimadas
-    </div>`;
+    html += `
+      <div class="priority-summary-line">
+        <span>⏱️ <strong>${priorities.totalHoursToday.toFixed(1)}h</strong> de trabalho planejado para hoje</span>
+        <span>•</span>
+        <span>📊 <strong>${priorities.overdue.length}</strong> atrasadas / <strong>${priorities.today.length}</strong> para hoje</span>
+      </div>
+    `;
 
     body.innerHTML = html;
   }
@@ -347,7 +373,7 @@ const App = (() => {
         <div style="text-align:center;padding:28px;">
           <div style="font-size:28px;margin-bottom:8px;">📄</div>
           <div style="color:var(--text2);font-size:13px;margin-bottom:12px;">
-            Documento de melhorias será exibido aqui quando o Apps Script estiver configurado.
+            Documento de melhorias conectado via Google Drive.
           </div>
           <a href="https://docs.google.com/document/d/${CONFIG.GOOGLE_DOC_ID}/edit" 
              target="_blank" class="doc-link-btn">
@@ -361,7 +387,7 @@ const App = (() => {
   // ── Render milestones ──
   function renderMilestones() {
     const container = document.getElementById('milestones-container');
-    if (!container) return;
+    if (!container || typeof MILESTONES_DATA === 'undefined') return;
     container.innerHTML = MILESTONES_DATA.map(m => `
       <div class="milestone${m.done ? ' done-ms' : ''}">
         <div class="milestone-date">${m.date}</div>
@@ -370,46 +396,55 @@ const App = (() => {
     `).join('');
   }
 
-  // ── Filters ──
-  function setFilter(type, btn) {
-    activeFilter = type;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-
-    document.querySelectorAll('.task').forEach(task => {
-      if (type === 'all') task.style.display = '';
-      else if (type === 'pending') task.style.display = !task.classList.contains('done') ? '' : 'none';
-      else if (type === 'done') task.style.display = task.classList.contains('done') ? '' : 'none';
-      else task.style.display = (task.dataset.tags || '').includes(type) ? '' : 'none';
-    });
-  }
-
   // ── Sprint toggle ──
-  function toggleSprint(id) {
-    const el = document.getElementById(id);
+  function toggleSprint(sprintId) {
+    const el = document.getElementById(sprintId);
     if (el) el.classList.toggle('collapsed');
   }
 
-  // ── Navigate to task ──
+  // ── Filter handling ──
+  function setFilter(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const tasks = document.querySelectorAll('.task');
+    tasks.forEach(task => {
+      const isDone = task.classList.contains('done');
+      const tags = (task.dataset.tags || '').split(' ');
+
+      let visible = true;
+      if (filter === 'pending') visible = !isDone;
+      else if (filter === 'done') visible = isDone;
+      else if (filter !== 'all') visible = tags.includes(filter);
+
+      task.style.display = visible ? 'flex' : 'none';
+    });
+  }
+
+  // ── Scroll to task ──
   function scrollToTask(taskId) {
     const taskEl = document.querySelector(`[data-task-id="${taskId}"]`);
-    if (!taskEl) return;
-
-    // Expand parent sprint if collapsed
-    const sprint = taskEl.closest('.sprint');
-    if (sprint && sprint.classList.contains('collapsed')) {
-      sprint.classList.remove('collapsed');
+    if (taskEl) {
+      const sprint = taskEl.closest('.sprint');
+      if (sprint && sprint.classList.contains('collapsed')) {
+        sprint.classList.remove('collapsed');
+      }
+      taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      taskEl.style.transition = 'box-shadow 0.3s ease';
+      taskEl.style.boxShadow = '0 0 0 2px var(--accent)';
+      setTimeout(() => {
+        taskEl.style.boxShadow = '';
+      }, 2000);
     }
-
-    taskEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    taskEl.style.background = 'var(--accent-glow)';
-    setTimeout(() => { taskEl.style.background = ''; }, 2000);
   }
 
   // ── Tab title ──
   function updateTabTitle() {
     const pending = document.querySelectorAll('.task-cb:not(:checked)').length;
-    document.title = pending > 0 ? `(${pending}) 📅 Dashboard — Scalc` : '📅 Dashboard — Scalc';
+    document.title = pending > 0
+      ? `(${pending}) ServCalc Dev Dashboard`
+      : '✅ ServCalc Dev Dashboard';
   }
 
   // ── Toast notifications ──
@@ -419,7 +454,7 @@ const App = (() => {
 
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = message;
+    toast.textContent = message;
     container.appendChild(toast);
 
     setTimeout(() => {
@@ -432,7 +467,8 @@ const App = (() => {
   // ── Manual sync ──
   async function manualSync() {
     showToast('🔄 Sincronizando...', 'info');
-    await GoogleSync.loadTaskStates();
+    await Promise.all([GoogleSync.loadTaskStates(), GoogleSync.loadCustomTasks()]);
+    renderSprints();
     applyStates();
     showToast('✅ Sincronizado com sucesso!', 'success');
   }
@@ -440,8 +476,59 @@ const App = (() => {
   // ── Manual email ──
   async function sendEmailNow() {
     const states = GoogleSync.getTaskStates();
-    const priorities = Priorities.analyzePriorities(TASKS_DATA, states);
+    const allTasks = getAllTasks();
+    const priorities = Priorities.analyzePriorities(allTasks, states);
     await Notifications.sendPriorityEmail(priorities);
+  }
+
+  // ── New Task Modal ──
+  function showNewTaskModal() {
+    const modal = document.getElementById('new-task-modal');
+    if (modal) {
+      modal.classList.add('visible');
+      const textInput = document.getElementById('task-new-text');
+      if (textInput) {
+        textInput.value = '';
+        setTimeout(() => textInput.focus(), 100);
+      }
+      const dateInput = document.getElementById('task-new-date');
+      if (dateInput) dateInput.value = Priorities.getTodayStr();
+    }
+  }
+
+  function closeNewTaskModal() {
+    const modal = document.getElementById('new-task-modal');
+    if (modal) modal.classList.remove('visible');
+  }
+
+  async function saveNewTask() {
+    const textInput = document.getElementById('task-new-text');
+    const text = textInput ? textInput.value.trim() : '';
+    if (!text) {
+      showToast('Por favor, informe o texto da tarefa.', 'warning');
+      return;
+    }
+
+    const sprint = parseInt(document.getElementById('task-new-sprint').value) || 1;
+    const date = document.getElementById('task-new-date').value || Priorities.getTodayStr();
+    const hours = document.getElementById('task-new-hours').value.trim() || '1h';
+    const tag = document.getElementById('task-new-tag').value || 'feedback';
+
+    closeNewTaskModal();
+    showToast('➕ Adicionando tarefa...', 'info');
+
+    await GoogleSync.addCustomTask({
+      sprint,
+      date,
+      text,
+      tags: [tag],
+      hours,
+      createdBy: userName
+    });
+
+    renderSprints();
+    applyStates();
+    showToast('✨ Tarefa adicionada e sincronizada!', 'success');
   }
 
   // ── Config modal ──
@@ -510,6 +597,9 @@ const App = (() => {
     showToast,
     manualSync,
     sendEmailNow,
+    showNewTaskModal,
+    closeNewTaskModal,
+    saveNewTask,
     showConfig,
     saveConfig,
     closeConfig,

@@ -196,12 +196,57 @@ const GoogleSync = (() => {
     return false;
   }
 
+  // ── Custom Tasks Sync ──
+  let customTasks = [];
+
+  async function loadCustomTasks() {
+    const data = await apiFetch('getCustomTasks');
+    if (data && Array.isArray(data)) {
+      customTasks = data;
+      try {
+        localStorage.setItem('scalc_custom_tasks', JSON.stringify(customTasks));
+      } catch (e) {}
+      return customTasks;
+    }
+    try {
+      const saved = localStorage.getItem('scalc_custom_tasks');
+      if (saved) customTasks = JSON.parse(saved);
+    } catch (e) {}
+    return customTasks;
+  }
+
+  async function addCustomTask(taskData) {
+    // Add locally
+    const tempId = 'custom-' + Date.now();
+    const newTask = {
+      id: tempId,
+      sprint: parseInt(taskData.sprint) || 1,
+      date: taskData.date || Priorities.getTodayStr(),
+      text: taskData.text,
+      tags: taskData.tags || ['feedback'],
+      hours: taskData.hours || '1h',
+      createdBy: taskData.createdBy || 'Thiago',
+      isCustom: true
+    };
+    customTasks.push(newTask);
+    try {
+      localStorage.setItem('scalc_custom_tasks', JSON.stringify(customTasks));
+    } catch (e) {}
+
+    // Sync to Google Sheet
+    const result = await apiFetch('addTask', 'POST', taskData);
+    if (result && result.id) {
+      newTask.id = result.id;
+    }
+    return newTask;
+  }
+
   // ── Auto-refresh timer ──
   let syncTimer = null;
   function startAutoSync() {
     if (syncTimer) clearInterval(syncTimer);
     syncTimer = setInterval(async () => {
-      await loadTaskStates();
+      await Promise.all([loadTaskStates(), loadCustomTasks()]);
       if (typeof App !== 'undefined') App.applyStates();
       updateSyncUI();
     }, CONFIG.SYNC_INTERVAL);
@@ -217,14 +262,18 @@ const GoogleSync = (() => {
 
   // ── Public API ──
   return {
+    apiFetch,
     loadTaskStates,
     saveTaskState,
+    loadCustomTasks,
+    addCustomTask,
     loadDocContent,
     migrateOldData,
     startAutoSync,
     stopAutoSync,
     updateSyncUI,
     getTaskStates: () => taskStates,
+    getCustomTasks: () => customTasks,
     getDocContent: () => docContent,
     getSyncStatus: () => syncStatus,
     getLastSyncTime: () => lastSyncTime,
