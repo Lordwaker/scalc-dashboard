@@ -114,8 +114,8 @@ const GoogleSync = (() => {
     // Try via Apps Script
     const data = await apiFetch(`getDoc&docId=${CONFIG.GOOGLE_DOC_ID}`);
     if (data) {
-      docContent = data;
-      return data;
+      docContent = (typeof data === 'object' && data.html) ? data.html : data;
+      return docContent;
     }
 
     // Fallback: try direct export (works if doc is public)
