@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dashboard de desenvolvimento do ServCalc — acompanhe sprints, prioridades e melhorias em tempo real.">
+  <title>📅 Dashboard — Scalc</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Carregando Dashboard...</div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-brand">
+    <span class="logo">📅</span> Scalc <span>Dev Dashboard</span>
+  </div>
+  <div class="global-progress">
+    <div class="progress-label">
+      <span>Progresso Geral</span>
+      <span id="global-pct">0%</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="global-bar" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-badge">✅ <strong id="done-count">0</strong> feitos</div>
+    <div class="stat-badge">⏳ <strong id="pending-count">0</strong> pendentes</div>
+    <div class="stat-badge">📦 <strong id="total-count">0</strong> total</div>
+  </div>
+</div>
+
+<!-- SYNC BAR -->
+<div class="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-text">Conectando...</span>
+  <div class="sync-actions">
+    <button class="sync-btn" onclick="App.manualSync()" title="Forçar sincronização">🔄 Sync</button>
+    <button class="sync-btn" onclick="App.sendEmailNow()" title="Enviar email com prioridades">📧 Email</button>
+    <button class="sync-btn" onclick="App.showConfig()" title="Configurações">⚙️</button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <button class="filter-btn active" onclick="App.setFilter('all',this)">Todos</button>
+  <button class="filter-btn" onclick="App.setFilter('pending',this)">⏳ Pendentes</button>
+  <button class="filter-btn" onclick="App.setFilter('done',this)">✅ Feitos</button>
+  <button class="filter-btn" onclick="App.setFilter('homolog',this)">🏗️ Homologação</button>
+  <button class="filter-btn" onclick="App.setFilter('seguranca',this)">🔐 Segurança</button>
+  <button class="filter-btn" onclick="App.setFilter('bug',this)">🐛 Bugs</button>
+  <button class="filter-btn" onclick="App.setFilter('feedback',this)">🧑‍⚖️ Feedback</button>
+  <button class="filter-btn" onclick="App.setFilter('tecnico',this)">⚙️ Técnico</button>
+  <button class="filter-btn" onclick="App.setFilter('banco',this)">📊 Banco</button>
+</div>
+
+<div class="main-container">
+
+  <!-- PRIORITY PANEL -->
+  <div class="priority-panel">
+    <div class="priority-header">
+      <h2>🎯 Prioridades do Dia</h2>
+      <span class="date-badge" id="priority-date"></span>
+    </div>
+    <div class="priority-body" id="priority-body">
+      <div class="priority-empty">
+        <span class="emoji">⏳</span>
+        Carregando prioridades...
+      </div>
+    </div>
+  </div>
+
+  <!-- DOC PANEL -->
+  <div class="doc-panel" id="doc-panel">
+    <div class="doc-header" onclick="App.toggleDoc()">
+      <h2>📄 Documento de Melhorias</h2>
+      <a href="https://docs.google.com/document/d/1XT3b3NXLWz7sAzhCk-7rllPxXa1c5BU5ejMtxyWPt-4/edit" 
+         target="_blank" class="doc-link-btn" onclick="event.stopPropagation()">
+        Abrir no Drive →
+      </a>
+      <span class="chevron">▼</span>
+    </div>
+    <div class="doc-body" id="doc-body">
+      <div style="text-align:center;padding:20px;color:var(--text3);">Carregando...</div>
+    </div>
+  </div>
+
+  <!-- SPRINTS CONTAINER -->
+  <div id="sprints-container"></div>
+
+  <!-- MILESTONES -->
+  <div class="milestone-section">
+    <div class="milestone-title">🎯 Marcos do Projeto</div>
+    <div class="milestones" id="milestones-container"></div>
+  </div>
+
+</div><!-- /main-container -->
+
+<!-- SCROLL TOP -->
+<button class="scroll-top" id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- CONFIG MODAL -->
+<div class="modal-backdrop" id="config-modal">
+  <div class="modal">
+    <h2>⚙️ Configurações</h2>
+    
+    <label>Seu Nome</label>
+    <input type="text" id="cfg-username" placeholder="Ex: Thiago">
+
+    <label>Google Apps Script URL</label>
+    <input type="text" id="cfg-script-url" placeholder="https://script.google.com/macros/s/.../exec">
+    
+    <label>ServCalc API URL</label>
+    <input type="text" id="cfg-api-url" placeholder="https://servcalc.com.br/api">
+    
+    <label>Dashboard API Key</label>
+    <input type="text" id="cfg-api-key" placeholder="scalc-dash-2026-prioridades">
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="App.closeConfig()">Cancelar</button>
+      <button class="btn-primary" onclick="App.saveConfig()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS (order matters) -->
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/google-sync.js"></script>
+<script src="js/priorities.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
