@@ -2,10 +2,11 @@
 // All tasks, sprints, milestones, and day metadata for the ServCalc Dev Calendar
 
 const SPRINTS_DATA = [
-  { id: 0, number: 0, title: 'Ambiente de Homologação + Segurança Crítica', period: '26/07 (Sáb) → 29/07 (Ter) · Nenhum deploy em produção antes de concluir', colorClass: 's0', collapsed: false },
+  { id: 0, number: 0, title: 'Ambiente de Homologação + Segurança Crítica', period: '26/07 (Sáb) → 29/07 (Ter) · Nenhum deploy em produção antes de concluir', colorClass: 's0', collapsed: false, maxPriority: true, priorityNote: 'O ambiente de homologação protege seus clientes de bugs introduzidos durante o desenvolvimento das melhorias.' },
   { id: 1, number: 1, title: '🚨 Bugs Críticos + Banco + Legislações', period: '30/07 (Qua) → 10/08 (Dom) · Todo deploy passa por homolog primeiro', colorClass: 's1', collapsed: false },
   { id: 2, number: 2, title: '🔧 Refatoração Técnica + Auditoria', period: '11/08 (Seg) → 24/08 (Dom)', colorClass: 's2', collapsed: true },
-  { id: 3, number: 3, title: '✨ Polimento e Features Avançadas', period: '25/08 (Seg) → 12/09 (Sex)', colorClass: 's3', collapsed: true }
+  { id: 3, number: 3, title: '✨ Polimento e Features Avançadas', period: '25/08 (Seg) → 12/09 (Sex)', colorClass: 's3', collapsed: true },
+  { id: 4, number: 4, title: '💰 Redução de Custos Oracle Cloud', period: '15/09 (Seg) → 25/09 (Sex) · Fatura Oracle disparou — ação imediata', colorClass: 's4', collapsed: false, maxPriority: true, priorityNote: 'O saldo Always Free de compute (3.000 OCPU-horas/mês) se esgota antes do fim do mês com 7 OCPUs A1 ligados 24/7, e a Container Instance de produção não tem cota gratuita nenhuma. Cada dia sem ação é dinheiro pago desnecessariamente — plano completo em <code>Documentações/plano_reducao_custos_oci.md</code>.' }
 ];
 
 const TASKS_DATA = [
@@ -102,7 +103,33 @@ const TASKS_DATA = [
   { id: 's2-12', sprint: 2, date: '2026-08-18', text: 'Documentar nova arquitetura de módulos + retrospectiva + planning Sprint 3', tags: ['tecnico'], hours: '4h' },
 
   // ═══ SPRINT 3 — POLIMENTO ═══
-  { id: 's3-01', sprint: 3, date: '2026-08-25', text: 'Sprint 3 será detalhado ao final do Sprint 2', tags: [], hours: '' }
+  { id: 's3-01', sprint: 3, date: '2026-08-25', text: 'Sprint 3 será detalhado ao final do Sprint 2', tags: [], hours: '' },
+
+  // ═══ SPRINT 4 — REDUÇÃO DE CUSTOS ORACLE CLOUD (PRIORIDADE MÁXIMA) ═══
+  // Fase 1 — ganhos imediatos, risco baixo (~R$24/mês) — Seg 15/09
+  { id: 's4-01', sprint: 4, date: '2026-09-15', text: '<strong>[VOCÊ — OCI]</strong> Excluir as VMs paradas <code>deploy-runner</code> e <code>scalc-apresentation-page-backend-server</code> + seus boot volumes (confirmar antes se <code>deploy-runner</code> ainda é usado por algum pipeline)', tags: ['custo'], hours: '20min', responsible: 'voce' },
+  { id: 's4-02', sprint: 4, date: '2026-09-15', text: '<strong>[VOCÊ — OCI]</strong> Excluir custom images não utilizadas (4 imagens, 22GB) após confirmar que nenhuma VM depende delas', tags: ['custo'], hours: '15min', responsible: 'voce' },
+  { id: 's4-03', sprint: 4, date: '2026-09-15', text: '<strong>[VOCÊ — OCI]</strong> Reduzir o budget <code>Alto_Consumo</code> de R$180 para R$80/mês e criar alertas em 50% / 80% / 100% (real e previsto)', tags: ['custo'], hours: '15min', responsible: 'voce' },
+  { id: 's4-04', sprint: 4, date: '2026-09-15', text: '<strong>[VOCÊ — OCI]</strong> Ativar o Cost Anomaly Detection na tenancy', tags: ['custo'], hours: '10min', responsible: 'voce' },
+
+  // Fase 2 — voltar o A1 para dentro do gratuito (~R$110/mês) — Ter 16/09 a Sex 19/09
+  { id: 's4-05', sprint: 4, date: '2026-09-16', text: '<strong>[VOCÊ — OCI]</strong> Reduzir <code>servcalc-homolog</code> de 2 → 1 OCPU (o próprio Cloud Advisor já recomenda essa redução)', tags: ['custo'], hours: '30min', responsible: 'voce' },
+  { id: 's4-06', sprint: 4, date: '2026-09-16', text: '<strong>[VOCÊ — OCI]</strong> Configurar OCI Resource Scheduler para desligar <code>servcalc-homolog</code> às 20h e religar às 8h em dias úteis', tags: ['custo'], hours: '1h', responsible: 'voce' },
+  { id: 's4-07', sprint: 4, date: '2026-09-17', text: '<strong>[VOCÊ — OCI]</strong> Reduzir <code>Apresentação Servcalc</code> de 2 → 1 OCPU, ou desligar quando não houver demonstração agendada', tags: ['custo'], hours: '30min', responsible: 'voce' },
+  { id: 's4-08', sprint: 4, date: '2026-09-17', text: '<strong>[VOCÊ — OCI]</strong> Reduzir <code>servcalc-frontend</code> de 2 → 1 OCPU (medir CPU antes de aplicar)', tags: ['custo'], hours: '30min', responsible: 'voce' },
+  { id: 's4-09', sprint: 4, date: '2026-09-18', text: 'Confirmar que a RAM A1 total ligada ficou ≤ 24GB (limite Always Free) após os downsizes acima', tags: ['custo'], hours: '15min', responsible: 'voce' },
+  { id: 's4-10', sprint: 4, date: '2026-09-19', text: 'Conferir no Cost Analysis (Daily, agrupado por Service) se a linha <em>Compute</em> voltou para R$0,00/dia', tags: ['custo'], hours: '15min', responsible: 'voce' },
+
+  // Fase 3 — eliminar a Container Instance (~R$121/mês, maior ganho isolado) — Seg 22/09 a Qua 24/09
+  { id: 's4-11', sprint: 4, date: '2026-09-22', text: '<strong>[EU]</strong> Adaptar <code>deploy.py</code>: trocar <code>docker build</code> + recriação de Container Instance por deploy via SSH + PM2 (mesmo padrão já usado em <code>deploy_homolog.py</code>)', tags: ['custo', 'tecnico'], hours: '4h', responsible: 'eu' },
+  { id: 's4-12', sprint: 4, date: '2026-09-22', text: '<strong>[VOCÊ — OCI]</strong> Provisionar (ou reaproveitar) uma VM A1 dedicada ao backend de produção com Node 22, PM2 e Nginx — mesmo setup já usado em homolog', tags: ['custo'], hours: '1h', responsible: 'voce' },
+  { id: 's4-13', sprint: 4, date: '2026-09-23', text: 'Validar o novo fluxo de deploy do backend em VM A1 primeiro em homologação, comparando resultado com a Container Instance atual', tags: ['custo', 'homolog'], hours: '2h' },
+  { id: 's4-14', sprint: 4, date: '2026-09-24', text: '<strong>[VOCÊ — OCI]</strong> Após validação em homolog, migrar produção da Container Instance para a VM A1 e excluir <code>scalc-backend-instance</code>', tags: ['custo'], hours: '1h', responsible: 'voce' },
+
+  // Fase 4 — governança permanente — junto com a Fase 3
+  { id: 's4-15', sprint: 4, date: '2026-09-24', text: '<strong>[VOCÊ — OCI]</strong> Criar quota policy limitando <code>standard-a1-core-count</code> a 4 e <code>container-instance-count</code> a 0 no compartimento root', tags: ['custo'], hours: '30min', responsible: 'voce' },
+  { id: 's4-16', sprint: 4, date: '2026-09-25', text: 'Atualizar <code>fluxo_deploy.md</code> com a regra: nenhuma VM nova sem checar o saldo de OCPU-horas do mês', tags: ['custo', 'tecnico'], hours: '20min', responsible: 'eu' },
+  { id: 's4-17', sprint: 4, date: '2026-09-25', text: '<strong>[VOCÊ]</strong> Confirmar com o suporte Oracle o teor do aviso "Always Free A1 Resource Limit Update" e o saldo A1 vigente', tags: ['custo'], hours: '30min', responsible: 'voce' }
 ];
 
 const MILESTONES_DATA = [
@@ -112,7 +139,11 @@ const MILESTONES_DATA = [
   { date: '31/07', text: '🐛 Bugs de RGPS, integralidade e paridade corrigidos', done: true },
   { date: '08/08', text: '🧑‍⚖️ Sprint 1 entregue — features de usuário, PDF e municípios', done: false },
   { date: '22/08', text: '🔧 Sprint 2 entregue — código refatorado e testável', done: false },
-  { date: '12/09', text: '✨ Sprint 3 entregue — produto estável e diferenciado', done: false }
+  { date: '12/09', text: '✨ Sprint 3 entregue — produto estável e diferenciado', done: false },
+  { date: '15/09', text: '💰 Fase 1 concluída — recursos parados excluídos e alertas de custo ativos', done: false },
+  { date: '19/09', text: '💰 Fase 2 concluída — A1 de volta a ≤4 OCPUs, dentro do Always Free', done: false },
+  { date: '24/09', text: '💰 Fase 3 concluída — backend fora da Container Instance (~R$121/mês economizados)', done: false },
+  { date: '25/09', text: '💰 Fase 4 concluída — quota policies travando o saldo A1 permanentemente', done: false }
 ];
 
 // Day metadata keyed by date string for O(1) lookup
@@ -137,5 +168,14 @@ const DAYS_DATA = {
   '2026-08-14': { emoji: '🔧', label: 'Qui-Sex, 14-15/08', description: '~12h · Repository Layer + Testes', isWeekend: false },
   '2026-08-16': { emoji: '🔄', label: 'Sáb-Dom, 16-17/08', description: 'Infra + Frontend CDN', isWeekend: true, weekendHours: '8h' },
   '2026-08-18': { emoji: '🚀', label: 'Seg-Sex, 18-22/08', description: '~30h · Finalização Sprint 2 + Planning Sprint 3', isWeekend: false },
-  '2026-08-25': { emoji: '✨', label: '25/08 → 12/09', description: 'Detalhado ao início do Sprint 2', isWeekend: false }
+  '2026-08-25': { emoji: '✨', label: '25/08 → 12/09', description: 'Detalhado ao início do Sprint 2', isWeekend: false },
+  '2026-09-15': { emoji: '💰', label: 'Segunda, 15/09', description: '~1h · Fase 1: limpar recursos parados e travar orçamento', isWeekend: false },
+  '2026-09-16': { emoji: '💰', label: 'Terça, 16/09', description: '~1.5h · Fase 2: downsize homolog + agendamento de stop/start', isWeekend: false },
+  '2026-09-17': { emoji: '💰', label: 'Quarta, 17/09', description: '~1h · Fase 2: downsize apresentação + frontend', isWeekend: false },
+  '2026-09-18': { emoji: '💰', label: 'Quinta, 18/09', description: '~15min · Fase 2: validar memória A1 dentro do gratuito', isWeekend: false },
+  '2026-09-19': { emoji: '💰', label: 'Sexta, 19/09', description: '~15min · Fase 2: confirmar Compute em R$0,00/dia', isWeekend: false },
+  '2026-09-22': { emoji: '💰', label: 'Segunda, 22/09', description: '~5h · Fase 3: migrar backend da Container Instance para VM A1', isWeekend: false },
+  '2026-09-23': { emoji: '💰', label: 'Terça, 23/09', description: '~2h · Fase 3: validar novo fluxo de deploy em homolog', isWeekend: false },
+  '2026-09-24': { emoji: '💰', label: 'Quarta, 24/09', description: '~1.5h · Fase 3: cutover em produção + Fase 4: quota policies', isWeekend: false },
+  '2026-09-25': { emoji: '💰', label: 'Quinta, 25/09', description: '~50min · Fase 4: documentar regra e confirmar com suporte Oracle', isWeekend: false }
 };

@@ -81,7 +81,7 @@ const App = (() => {
         <div class="sprint ${sprint.colorClass}${collapsedClass}" id="sprint-${sprint.id}">
           <div class="sprint-header" onclick="App.toggleSprint('sprint-${sprint.id}')">
             <div class="sprint-meta">
-              <div class="sprint-num">${sprint.id === 0 ? '🏗️ Sprint 0 — PRIORIDADE MÁXIMA' : `Sprint ${sprint.id}`}</div>
+              <div class="sprint-num">${sprint.maxPriority ? `🏗️ Sprint ${sprint.id} — PRIORIDADE MÁXIMA` : `Sprint ${sprint.id}`}</div>
               <div class="sprint-title">${sprint.title}</div>
               <div class="sprint-period">${sprint.period}</div>
             </div>
@@ -94,7 +94,7 @@ const App = (() => {
             <span class="chevron">▼</span>
           </div>
           <div class="sprint-body">
-            ${renderSprintDays(sprint.id)}
+            ${renderSprintDays(sprint)}
           </div>
         </div>
       `;
@@ -103,7 +103,8 @@ const App = (() => {
     container.innerHTML = html;
   }
 
-  function renderSprintDays(sprintId) {
+  function renderSprintDays(sprint) {
+    const sprintId = sprint.id;
     const sprintTasks = getAllTasks().filter(t => t.sprint === sprintId);
     const today = Priorities.getTodayStr();
 
@@ -118,11 +119,11 @@ const App = (() => {
     // Get day metadata
     let html = '';
 
-    // Sprint 0 special note
-    if (sprintId === 0) {
+    // Max-priority sprint special note
+    if (sprint.maxPriority && sprint.priorityNote) {
       html += `
         <div class="section-note">
-          ℹ️ <strong>Por que prioridade máxima?</strong> O ambiente de homologação protege seus clientes de bugs introduzidos durante o desenvolvimento das melhorias.
+          ℹ️ <strong>Por que prioridade máxima?</strong> ${sprint.priorityNote}
         </div>
       `;
     }
@@ -177,7 +178,8 @@ const App = (() => {
     const tagsHTML = (task.tags || []).map(tag => {
       const labels = {
         seguranca: '🔐 Segurança', bug: '🐛 Bug', feedback: '🧑‍⚖️ Feedback',
-        tecnico: '⚙️ Técnico', banco: '📊 Banco', homolog: '🏗️ Homolog'
+        tecnico: '⚙️ Técnico', banco: '📊 Banco', homolog: '🏗️ Homolog',
+        custo: '💰 Custo Oracle'
       };
       return `<span class="tag tag-${tag}">${labels[tag] || tag}</span>`;
     }).join('');

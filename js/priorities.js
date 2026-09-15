@@ -26,6 +26,7 @@ const Priorities = (() => {
 
   // ── Priority scoring ──
   const TAG_WEIGHTS = {
+    custo: 12,
     seguranca: 10,
     bug: 8,
     feedback: 5,
