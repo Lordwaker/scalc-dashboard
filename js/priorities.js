@@ -29,6 +29,7 @@ const Priorities = (() => {
     custo: 12,
     seguranca: 10,
     bug: 8,
+    tutorial: 8,
     feedback: 5,
     banco: 5,
     homolog: 4,

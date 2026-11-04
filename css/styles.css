@@ -315,6 +315,11 @@ body {
 .sprint.s4 .sprint-progress-bar { background: linear-gradient(90deg, var(--green), var(--teal)); }
 .sprint.s4 .sprint-pct { color: var(--green); }
 
+.sprint.s5 .sprint-header { border-left: 4px solid var(--orange); }
+.sprint.s5 .sprint-num { color: var(--orange); }
+.sprint.s5 .sprint-progress-bar { background: linear-gradient(90deg, var(--orange), var(--purple)); }
+.sprint.s5 .sprint-pct { color: var(--orange); }
+
 /* ═══════════ DAY ═══════════ */
 .day { border-top: 1px solid var(--border); padding: 0 22px; }
 .day:first-child { border-top: none; }
@@ -375,6 +380,7 @@ body {
 .tag-banco { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
 .tag-homolog { background: var(--teal-bg); color: var(--teal); border: 1px solid var(--teal-border); }
 .tag-custo { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.tag-tutorial { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange-border); }
 .tag-overdue { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); animation: pulse 2s infinite; }
 
 .task-hours {

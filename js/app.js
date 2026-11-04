@@ -81,7 +81,7 @@ const App = (() => {
         <div class="sprint ${sprint.colorClass}${collapsedClass}" id="sprint-${sprint.id}">
           <div class="sprint-header" onclick="App.toggleSprint('sprint-${sprint.id}')">
             <div class="sprint-meta">
-              <div class="sprint-num">${sprint.maxPriority ? `🏗️ Sprint ${sprint.id} — PRIORIDADE MÁXIMA` : `Sprint ${sprint.id}`}</div>
+              <div class="sprint-num">${sprint.maxPriority ? `🏗️ Sprint ${sprint.id} — PRIORIDADE MÁXIMA` : sprint.highPriority ? `🟠 Sprint ${sprint.id} — ALTA PRIORIDADE` : `Sprint ${sprint.id}`}</div>
               <div class="sprint-title">${sprint.title}</div>
               <div class="sprint-period">${sprint.period}</div>
             </div>
@@ -124,6 +124,12 @@ const App = (() => {
       html += `
         <div class="section-note">
           ℹ️ <strong>Por que prioridade máxima?</strong> ${sprint.priorityNote}
+        </div>
+      `;
+    } else if (sprint.highPriority && sprint.priorityNote) {
+      html += `
+        <div class="section-note">
+          ℹ️ <strong>Por que alta prioridade?</strong> ${sprint.priorityNote}
         </div>
       `;
     }
@@ -179,7 +185,7 @@ const App = (() => {
       const labels = {
         seguranca: '🔐 Segurança', bug: '🐛 Bug', feedback: '🧑‍⚖️ Feedback',
         tecnico: '⚙️ Técnico', banco: '📊 Banco', homolog: '🏗️ Homolog',
-        custo: '💰 Custo Oracle'
+        custo: '💰 Custo Oracle', tutorial: '🎓 Tutorial'
       };
       return `<span class="tag tag-${tag}">${labels[tag] || tag}</span>`;
     }).join('');
