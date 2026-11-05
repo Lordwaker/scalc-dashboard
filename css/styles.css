@@ -569,3 +569,9 @@ body {
   .doc-header, .doc-body { padding-left: 14px; padding-right: 14px; }
   .priority-header, .priority-body { padding-left: 14px; padding-right: 14px; }
 }
+
+/* Sprint 6 — botões sem função (vermelho) */
+.sprint.s6 .sprint-header { border-left: 4px solid #e74c3c; }
+.sprint.s6 .sprint-num { color: #e74c3c; }
+.sprint.s6 .sprint-progress-bar { background: linear-gradient(90deg, #e74c3c, var(--orange)); }
+.sprint.s6 .sprint-pct { color: #e74c3c; }
